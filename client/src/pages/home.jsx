@@ -32,7 +32,7 @@ const Home = () => {
     const fetchProducts = async () => {
       try {
         let url =
-          '${import.meta.env.VITE_API_URL}/api/products';
+          `${import.meta.env.VITE_API_URL}/api/products`;
         const queryParams = [];
 
         // SORT

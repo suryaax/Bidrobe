@@ -79,7 +79,7 @@ const Navbar = ({ onOpenAuth, isLoggedIn, }) => {
         }
 
         const response = await fetch(
-          '${import.meta.env.VITE_API_URL}/api/products/notifications',
+          `${import.meta.env.VITE_API_URL}/api/products/notifications`,
           {
             headers: {
               Authorization:

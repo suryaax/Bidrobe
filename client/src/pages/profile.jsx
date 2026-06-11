@@ -31,7 +31,7 @@ const Profile = () => {
 
         const response = await fetch(
 
-          '${import.meta.env.VITE_API_URL}/api/auth/me',
+          `${import.meta.env.VITE_API_URL}/api/auth/me`,
 
           {
             headers: {
@@ -105,7 +105,7 @@ const Profile = () => {
 
       setLoading(true);
       const response = await fetch(
-        '${import.meta.env.VITE_API_URL}/api/auth/profile',
+        `${import.meta.env.VITE_API_URL}/api/auth/profile`,
         {
           method: "PUT",
           headers: {
