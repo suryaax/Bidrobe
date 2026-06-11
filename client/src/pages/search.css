@@ -1,0 +1,49 @@
+.search-page {
+
+  margin-top: 40px;
+
+}
+
+.search-title {
+
+  font-size: 32px;
+
+  margin-bottom: 10px;
+
+}
+
+.search-count {
+
+  color: #666;
+
+  margin-bottom: 24px;
+
+}
+
+.search-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fill,
+      minmax(250px, 1fr)
+    );
+
+  gap: 24px;
+
+}
+
+.empty-search {
+
+  margin-top: 40px;
+
+  text-align: center;
+
+}
+
+.empty-search h3 {
+
+  margin-bottom: 10px;
+
+}

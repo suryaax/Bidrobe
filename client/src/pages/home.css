@@ -1,0 +1,72 @@
+/* RECOMMENDATION LAYOUT */
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .recommendation {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.recommendation {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 40px;
+  margin-top: 100px;
+  margin-bottom: 200px;
+}
+
+section.recommendation {
+  margin-top: 100px;
+  margin-bottom: 200px;
+}
+
+.filter {
+  display: flex;
+  flex-direction: column;
+
+  gap: 20px;
+}
+
+.filter-item {
+  background: transparent;
+
+  border: none;
+
+  text-align: left;
+
+  font-size: 15px;
+  font-weight: 500;
+
+  color: #777;
+
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.filter-item:hover {
+  color: black;
+}
+
+.filter-item.active {
+  color: black;
+  font-weight: 700;
+}

@@ -1,0 +1,234 @@
+.products-page {
+  margin-top: calc(var(--navbar-height) + 50px);
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+}
+
+/* FLOATING BUTTON */
+.fab {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  background: black;
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* remove weird spacing */
+  padding: 0;
+  line-height: 0;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease;
+}
+
+.seller-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.seller-product-wrapper {
+  width: fit-content;
+  display: flex;
+  flex-direction: column;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sold-info {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.payment-proof-image {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border: 1px solid #e5e5e5;
+}
+
+.confirm-btn {
+  width: 100%;
+  height: 50px;
+  border: none;
+  background: black;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.waiting-payment {
+  color: #777;
+  font-size: 14px;
+}
+
+.completed-badge {
+  margin-top: 14px;
+  padding: 14px;
+  text-align: center;
+  background: #f3f3f3;
+  font-weight: 600;
+}
+
+.edit-btn {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #cacaca;
+  background: white;
+  color: #111;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+  text-align: center;
+}
+
+.edit-btn:hover {
+  background: #111;
+  color: white;
+}
+
+.delete-btn {
+  margin-top: 10px;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  background: #ff1a1a;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+  text-align: center;
+}
+
+.delete-btn:hover {
+  background: red;
+  color: white;
+}
+
+.fab:hover {
+  transform: scale(1.1);
+}
+
+.transaction-box {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid #e5e5e5;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.transaction-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.label {
+  font-size: 14px;
+  color: #666;
+}
+
+.value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+
+.waiting-payment {
+  font-size: 14px;
+  color: #999;
+}
+
+.proof-success {
+  font-size: 14px;
+  color: green;
+  font-weight: 500;
+}
+
+.proof-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.proof-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.view-proof-btn {
+  flex: 1;
+  height: 42px;
+  border: 1px solid #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: #111;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.complete-btn {
+  flex: 1;
+  height: 42px;
+  border: none;
+  background: #111;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.completed-text {
+  color: green;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.winner-text {
+  font-size: 15px;
+  color: #111;
+}
+
+.payment-waiting {
+  font-size: 14px;
+  color: #777;
+}
+
+.payment-submitted {
+  font-size: 14px;
+  color: green;
+  font-weight: 500;
+}
+
+/* responsive */
+@media (max-width: 768px) {
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

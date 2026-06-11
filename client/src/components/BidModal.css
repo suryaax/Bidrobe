@@ -1,0 +1,147 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(0,0,0,0.5);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 3000;
+
+  padding: 20px;
+}
+
+.modal {
+  position: relative;
+
+  width: min(900px, 100%);
+
+  background: white;
+
+  padding: 32px;
+}
+
+.close {
+  position: absolute;
+
+  top: 18px;
+  right: 18px;
+
+  border: none;
+  background: transparent;
+
+  font-size: 22px;
+
+  cursor: pointer;
+}
+
+.modal-content {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 40px;
+}
+
+.modal-image img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+
+  object-fit: cover;
+
+  border-radius: 10px;
+}
+
+.modal-info {
+  display: flex;
+  flex-direction: column;
+
+  justify-content: center;
+
+  gap: 20px;
+}
+
+.bid-title {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.current-bid {
+  font-size: 18px;
+}
+
+.current-bid span {
+  font-weight: 700;
+}
+
+.quick-bids {
+  display: flex;
+  gap: 12px;
+}
+
+.quick-bids button {
+  flex: 1;
+
+  padding: 14px;
+
+  border: 1px solid #ddd;
+  background: #f5f5f5;
+
+  cursor: pointer;
+
+  font-weight: 600;
+
+  transition: all 0.2s ease;
+}
+
+.quick-bids button:hover {
+  background: black;
+  color: white;
+}
+
+.or-text {
+  text-align: center;
+  color: #777;
+}
+
+.bid-input {
+  width: 100%;
+
+  padding: 14px;
+
+  border: 1px solid #ddd;
+
+  font-size: 15px;
+
+  outline: none;
+
+  box-sizing: border-box;
+}
+
+.bid-input:focus {
+  border-color: black;
+}
+
+.place-bid-btn {
+  padding: 16px;
+
+  border: none;
+
+  background: black;
+  color: white;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+
+  .modal-content {
+    grid-template-columns: 1fr;
+  }
+
+}

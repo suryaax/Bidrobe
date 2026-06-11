@@ -1,0 +1,8 @@
+.app {
+  padding-top: var(--navbar-height);
+}
+
+.container {
+  width: 85%;
+  margin: 0 auto;
+}
