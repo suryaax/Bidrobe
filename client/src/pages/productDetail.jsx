@@ -375,8 +375,8 @@ const ProductDetail = ({onOpenAuth, }) => {
                 Untuk transaksi lebih lanjut, harap hubungi pihak penjual
               </p>
               <a
-                href={`https://wa.me/${selected.product.seller?.phoneNumber}?text=${encodeURIComponent(
-                `Halo, Saya memenangkan lelang kamu ${selected.product.title} dengan harga Rp ${selected.product.currentBid.toLocaleString()}`
+                href={`https://wa.me/${product.seller.phoneNumber}?text=${encodeURIComponent(
+                  `Halo, Saya memenangkan lelang Anda untuk produk "${product.title}" dengan harga Rp ${product.currentBid.toLocaleString()}. Saya ingin melanjutkan proses transaksi.`
                 )}`}
                 target="_blank"
                 rel="noreferrer"
