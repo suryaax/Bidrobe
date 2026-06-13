@@ -17,6 +17,15 @@ router.post("/register", async (req, res) => {
       phoneNumber,
     } = req.body;
 
+    const phoneRegex = /^[1-9]\d{7,14}$/;
+
+    if (!phoneRegex.test(phoneNumber)) {
+      return res.status(400).json({
+        message:
+          "Nomor WhatsApp harus menggunakan format internasional (8-15 digit, tanpa + dan tanpa angka 0 di depan).",
+      });
+    }
+
     // CHECK EXISTING EMAIL
     const existingUser =
       await User.findOne({ email });
@@ -150,6 +159,15 @@ router.put(
         password,
 
       } = req.body;
+
+       const phoneRegex = /^[1-9]\d{7,14}$/;
+
+      if (!phoneRegex.test(phoneNumber)) {
+        return res.status(400).json({
+          message:
+            "Nomor WhatsApp harus menggunakan format internasional (8-15 digit, tanpa + dan tanpa angka 0 di depan).",
+        });
+      }
 
       // FIND USER
       const user =
