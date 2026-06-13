@@ -249,7 +249,7 @@ const ProductDetail = ({onOpenAuth, }) => {
   if (!product) {
     return (
       <div className="container">
-        Loading...
+        Memuat...
       </div>
     );
   }
@@ -375,7 +375,9 @@ const ProductDetail = ({onOpenAuth, }) => {
                 Untuk transaksi lebih lanjut, harap hubungi pihak penjual
               </p>
               <a
-                href={`https://wa.me/${product.seller.phoneNumber}`}
+                href={`https://wa.me/${selected.product.seller?.phoneNumber}?text=${encodeURIComponent(
+                `Halo, Saya memenangkan lelang kamu ${selected.product.title} dengan harga Rp ${selected.product.currentBid.toLocaleString()}`
+                )}`}
                 target="_blank"
                 rel="noreferrer"
                 className="contact-btn"
