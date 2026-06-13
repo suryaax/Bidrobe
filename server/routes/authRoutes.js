@@ -212,7 +212,7 @@ router.put(
       res.status(200).json({
 
         message:
-          "Profile updated successfully",
+          "Profil berhasil diperbarui",
 
         user,
 

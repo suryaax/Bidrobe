@@ -127,7 +127,7 @@ const Profile = () => {
       const data =
         await response.json();
       console.log(data);
-      alert("Profile updated!");
+      alert("Profil diperbarui!");
     } catch (error) {
       console.log(error);
     } finally {
