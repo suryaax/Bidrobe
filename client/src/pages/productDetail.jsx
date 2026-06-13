@@ -389,7 +389,7 @@ const ProductDetail = ({onOpenAuth, }) => {
           {isWinner && (
             <div className="payment-proof">
               <p>
-                Upload Bukti Transaksi
+                Unggah Bukti Transaksi
               </p>
               <div className="proof-actions">
                 <label className="custom-proof-input">
@@ -407,7 +407,7 @@ const ProductDetail = ({onOpenAuth, }) => {
                     {
                       paymentProof
                         ? paymentProof.name
-                        : "Upload Payment Proof"
+                        : "Unggah bukti pembayaran"
                     }
                   </span>
                 </label>
@@ -417,7 +417,7 @@ const ProductDetail = ({onOpenAuth, }) => {
                     handlePaymentProof
                   }
                 >
-                  Submit Bukti Transaksi
+                  Kirim Bukti Transaksi
                 </button>
               </div>
             </div>
