@@ -52,7 +52,7 @@ router.post("/register", async (req, res) => {
     });
 
     res.status(201).json({
-      message: "User created",
+      message: "Akun berhasil dibuat",
       user,
     });
 
@@ -112,7 +112,7 @@ router.post("/login", async (req, res) => {
 
     res.status(200).json({
 
-      message: "Login success",
+      message: "Proses masuk berhasil",
 
       token,
 
