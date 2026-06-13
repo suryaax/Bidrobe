@@ -68,13 +68,21 @@ const AuthModal = ({ onClose, setIsLoggedIn, }) => {
         if (
           password !== confirmPassword
         ) {
-
           alert(
             "Password tidak sesuai!"
           );
-
           return;
+        }
 
+        const phoneRegex =
+          /^[1-9]\d{7,14}$/;
+        if (
+          !phoneRegex.test(phoneNumber)
+        ) {
+          alert(
+            "Gunakan nomor WhatsApp internasional (8-15 digit, tanpa + dan tanpa angka 0 di depan)."
+          );
+          return;
         }
 
         const response =
@@ -296,26 +304,26 @@ const AuthModal = ({ onClose, setIsLoggedIn, }) => {
 
             {/* PHONE NUMBER */}
             {!isLogin && (
-
               <input
                 type="tel"
                 maxLength={15}
-                placeholder="Nomor Handphone"
+                placeholder="6281234567890"
                 value={phoneNumber}
                 onChange={(e) => {
-                  const value =
-                    e.target.value;
+                  const value = e.target.value;
 
-                  // ONLY NUMBERS
-                  if (/^\d*$/.test(value)) {
-                    setPhoneNumber(value);
+                  // Hanya angka
+                  if (!/^\d*$/.test(value)) return;
+
+                  // Tidak boleh diawali 0
+                  if (
+                    value.length > 0 &&
+                    value.startsWith("0")
+                  ) {
+                    return;
                   }
 
-                  else {
-                    alert(
-                      "Nomor handphone hanya boleh berisi nomor!"
-                    );
-                  }
+                  setPhoneNumber(value);
                 }}
               />
             )}
