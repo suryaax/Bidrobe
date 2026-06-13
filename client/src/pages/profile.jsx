@@ -141,7 +141,7 @@ const Profile = () => {
 
         {/* TITLE */}
         <h1 className="profile-title">
-          Profile-mu
+          Profil-mu
         </h1>
 
         <div className="profile-divider"></div>
