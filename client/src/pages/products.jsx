@@ -201,7 +201,7 @@ const Products = () => {
                 <div className="transaction-row">
 
                   <span className="label">
-                    Winner
+                    Pemenang
                   </span>
 
                   <span className="value">
@@ -312,7 +312,7 @@ const Products = () => {
 
               >
 
-                Edit
+                Sunting
 
               </button>
 

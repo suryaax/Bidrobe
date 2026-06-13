@@ -235,7 +235,7 @@ const Profile = () => {
           >
 
             {loading
-              ? "Updating..."
+              ? "Memperbarui..."
               : "Konfirmasi"}
 
           </button>
@@ -266,7 +266,7 @@ const Profile = () => {
 
         >
 
-          Log Out
+          Keluar
 
         </button>
 
