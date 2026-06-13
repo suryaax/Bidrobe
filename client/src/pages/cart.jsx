@@ -281,7 +281,7 @@ const Cart = () => {
 
                 <p>
 
-                  Your Bid:
+                  Penawaran Kamu:
                   {" "}
 
                   Rp {
