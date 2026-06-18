@@ -32,7 +32,7 @@ router.post("/register", async (req, res) => {
 
     if (existingUser) {
       return res.status(400).json({
-        message: "Email already used",
+        message: "Alamat email sudah digunakan",
       });
     }
 
@@ -80,7 +80,7 @@ router.post("/login", async (req, res) => {
 
     if (!user) {
       return res.status(400).json({
-        message: "User not found",
+        message: "Username tidak ditemukan",
       });
     }
 
@@ -93,7 +93,7 @@ router.post("/login", async (req, res) => {
 
     if (!isMatch) {
       return res.status(400).json({
-        message: "Wrong password",
+        message: "Username/Password salah",
       });
     }
 
@@ -178,7 +178,7 @@ router.put(
       if (!user) {
 
         return res.status(404).json({
-          message: "User not found",
+          message: "Username tidak ditemukan",
         });
 
       }
