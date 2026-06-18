@@ -93,7 +93,7 @@ router.post("/login", async (req, res) => {
 
     if (!isMatch) {
       return res.status(400).json({
-        message: "Username/Password salah",
+        message: "Username/Kata sandi salah",
       });
     }
 
