@@ -69,7 +69,7 @@ const AuthModal = ({ onClose, setIsLoggedIn, }) => {
           password !== confirmPassword
         ) {
           alert(
-            "Password tidak sesuai!"
+            "Kata Sandi tidak sesuai!"
           );
           return;
         }
@@ -198,7 +198,7 @@ const AuthModal = ({ onClose, setIsLoggedIn, }) => {
 
         alert(
           data.message ||
-          "Login gagal"
+          "Masuk gagal"
         );
 
         return;
@@ -219,7 +219,7 @@ const AuthModal = ({ onClose, setIsLoggedIn, }) => {
 
       alert(
         data.message ||
-        "Login sukses"
+        "Berhasil masuk"
       );
 
       // UPDATE LOGIN STATE
@@ -366,7 +366,7 @@ const AuthModal = ({ onClose, setIsLoggedIn, }) => {
 
               type="password"
 
-              placeholder="Password"
+              placeholder="Kata Sandi"
 
               value={password}
 
@@ -385,7 +385,7 @@ const AuthModal = ({ onClose, setIsLoggedIn, }) => {
 
                 type="password"
 
-                placeholder="Konfirmasi Password"
+                placeholder="Konfirmasi Kata Sandi"
 
                 value={confirmPassword}
 
@@ -460,7 +460,7 @@ const AuthModal = ({ onClose, setIsLoggedIn, }) => {
               setShowForgotPopup(true)
             }
           >
-            lupa password?
+            lupa kata sandi?
           </button>
         )}
 
@@ -470,13 +470,13 @@ const AuthModal = ({ onClose, setIsLoggedIn, }) => {
         <div className="forgot-popup">
           <div className="forgot-popup-card">
             <h3>
-              Pemulihan Password
+              Pemulihan Kata Sandi
             </h3>
 
             <p>
-              Fitur Pemulihan Password sedang 
+              Fitur Pemulihan kata sandi sedang 
               dalam tahap pengembangan.
-              Harap hubungi  
+              Harap hubungi  pengembang
               untuk bantuan lebih lanjut.
             </p>
 
