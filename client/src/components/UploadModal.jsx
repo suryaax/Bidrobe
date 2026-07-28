@@ -2,22 +2,10 @@ import React, { useState } from "react";
 import "./UploadModal.css";
 
 const categories = [
-  {
-    value: "Men",
-    label: "Pria",
-  },
-  {
-    value: "Women",
-    label: "Wanita",
-  },
-  {
-    value: "Children",
-    label: "Anak",
-  },
-  {
-    value: "Unisex",
-    label: "Unisex",
-  },
+  { value: "Men", label: "Pria" },
+  { value: "Women", label: "Wanita" },
+  { value: "Children", label: "Anak" },
+  { value: "Unisex", label: "Unisex" },
 ];
 
 const subCategories = [
@@ -32,530 +20,439 @@ const UploadModal = ({
   onUploadSuccess,
   editProduct,
 }) => {
-
   // IMAGE
-  const [images, setImages] =
-    useState([]);
+  const [images, setImages] = useState([]);
 
   // FORM
-  const [title, setTitle] =
-  useState(
+  const [title, setTitle] = useState(
     editProduct?.title || ""
   );
 
-  const [description,
-  setDescription] =
-  useState(
+  const [description, setDescription] = useState(
     editProduct?.description || ""
   );
 
-  const [category,
-  setCategory] =
-  useState(
+  const [category, setCategory] = useState(
     editProduct?.category || ""
   );
 
-  const [subCategory,
-  setSubCategory] =
-  useState(
+  const [subCategory, setSubCategory] = useState(
     editProduct?.subCategory || ""
   );
 
-  const [brand, setBrand] =
-  useState(
+  const [brand, setBrand] = useState(
     editProduct?.brand || ""
   );
 
-  const [currentBid,
-  setCurrentBid] =
-  useState(
-    editProduct?.currentBid || ""
+  // Harga awal lelang, bukan currentBid.
+  // Backend akan mengisi currentBid dengan nilai startingBid.
+  const [startingBid, setStartingBid] = useState(
+    editProduct?.startingBid ?? ""
   );
 
-  const [buyoutPrice,
-  setBuyoutPrice] =
-  useState(
-    editProduct?.buyoutPrice || ""
+  const [buyoutPrice, setBuyoutPrice] = useState(
+    editProduct?.buyoutPrice ?? ""
   );
 
-  const [durationHours,
-    setDurationHours] =
-    useState(24);
+  // Durasi baru dihitung setelah tawaran pertama masuk.
+  const [
+    auctionDurationHours,
+    setAuctionDurationHours,
+  ] = useState(
+    editProduct?.auctionDurationHours ?? 24
+  );
 
-  const [loading, setLoading] =
-    useState(false);
+  const [loading, setLoading] = useState(false);
 
   // HANDLE IMAGE SELECT
-  const handleImages = (e) => {
+  const handleImages = (event) => {
+    const selectedFiles = Array.from(
+      event.target.files || []
+    );
 
-    // MAX 5 IMAGES
-    if (e.target.files.length > 5) {
-
-      alert("Maximal 5 gambar");
-
+    if (selectedFiles.length > 5) {
+      alert("Maksimal 5 gambar");
+      event.target.value = "";
       return;
-
     }
 
-    setImages([
-      ...e.target.files
-    ]);
-
+    setImages(selectedFiles);
   };
 
   // UPLOAD IMAGES TO CLOUDINARY
   const uploadImages = async () => {
-
     const uploadedUrls = [];
 
     for (const image of images) {
+      const formData = new FormData();
+      formData.append("image", image);
 
-      const formData =
-        new FormData();
-
-      formData.append(
-        "image",
-        image
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/products/upload-image`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem(
+              "token"
+            )}`,
+          },
+          body: formData,
+        }
       );
 
-      const response =
-        await fetch(
+      const data = await response.json();
 
-          `${import.meta.env.VITE_API_URL}/api/products/upload-image`,
-
-          {
-            method: "POST",
-
-            headers: {
-
-              Authorization:
-                `Bearer ${localStorage.getItem("token")}`,
-
-            },
-
-            body: formData,
-          }
-
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Gagal mengunggah gambar"
         );
+      }
 
-      const data =
-        await response.json();
+      if (!data.imageUrl) {
+        throw new Error(
+          "URL gambar tidak diterima dari server"
+        );
+      }
 
-      uploadedUrls.push(
-        data.imageUrl
-      );
-
+      uploadedUrls.push(data.imageUrl);
     }
 
     return uploadedUrls;
-
   };
 
-  // HANDLE PRODUCT UPLOAD
+  // HANDLE PRODUCT UPLOAD / EDIT
   const handleUpload = async () => {
+    const startingPriceNumber = Number(startingBid);
+    const buyoutPriceNumber = Number(buyoutPrice);
+    const durationNumber = Number(
+      auctionDurationHours
+    );
 
     // VALIDATION
     if (
-      !title ||
-      !description ||
+      !title.trim() ||
+      !description.trim() ||
       !category ||
       !subCategory ||
-      !brand ||
-      !currentBid ||
-      (
-        !editProduct &&
-        images.length === 0
-      )
+      !brand.trim() ||
+      startingBid === "" ||
+      buyoutPrice === "" ||
+      auctionDurationHours === "" ||
+      (!editProduct && images.length === 0)
     ) {
-
-      alert(
-        "Harap isi seluruh kolom"
-      );
-
+      alert("Harap isi seluruh kolom");
       return;
+    }
 
+    if (
+      !Number.isFinite(startingPriceNumber) ||
+      startingPriceNumber < 0
+    ) {
+      alert("Harga awal lelang tidak valid");
+      return;
+    }
+
+    if (
+      !Number.isFinite(buyoutPriceNumber) ||
+      buyoutPriceNumber <= startingPriceNumber
+    ) {
+      alert(
+        "Harga Beli Sekarang harus lebih tinggi dari harga awal lelang"
+      );
+      return;
+    }
+
+    if (
+      !Number.isFinite(durationNumber) ||
+      durationNumber < 1
+    ) {
+      alert("Durasi lelang minimal 1 jam");
+      return;
     }
 
     try {
-
       setLoading(true);
 
-      // UPLOAD IMAGES
+      // Upload hanya gambar baru yang dipilih.
       const uploadedImages =
-        await uploadImages();
+        images.length > 0
+          ? await uploadImages()
+          : [];
 
-      // CREATE PRODUCT
-      // CREATE / EDIT PRODUCT
-      const response =
-        await fetch(
+      const response = await fetch(
+        editProduct
+          ? `${import.meta.env.VITE_API_URL}/api/products/${editProduct._id}`
+          : `${import.meta.env.VITE_API_URL}/api/products`,
+        {
+          method: editProduct ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem(
+              "token"
+            )}`,
+          },
+          body: JSON.stringify({
+            title: title.trim(),
+            description: description.trim(),
+            images:
+              uploadedImages.length > 0
+                ? uploadedImages
+                : editProduct?.images || [],
+            category,
+            subCategory,
+            brand: brand.trim(),
 
-          editProduct
-
-            ? `${import.meta.env.VITE_API_URL}/api/products/${editProduct._id}`
-
-            : `${import.meta.env.VITE_API_URL}/api/products`,
-
-          {
-
-            method:
-              editProduct
-                ? "PUT"
-                : "POST",
-
-            headers: {
-
-              "Content-Type":
-                "application/json",
-
-              Authorization:
-                `Bearer ${localStorage.getItem("token")}`,
-
-            },
-
-            body: JSON.stringify({
-
-              title,
-
-              description,
-
-              images:
-
-                uploadedImages.length > 0
-
-                  ? uploadedImages
-
-                  : editProduct?.images || [],
-
-              category,
-
-              subCategory,
-
-              brand,
-
-              currentBid:
-                Number(currentBid),
-
-              buyoutPrice:
-                Number(buyoutPrice),
-
-              durationHours:
-                Number(durationHours),
-
-            }),
-
-          }
-
-        );
-
-      const data =
-        await response.json();
-
-      console.log(data);
-
-      alert(
-        "Produk berhasil diunggah!"
+            // Nama field disesuaikan dengan schema baru.
+            startingBid: startingPriceNumber,
+            buyoutPrice: buyoutPriceNumber,
+            auctionDurationHours: durationNumber,
+          }),
+        }
       );
 
-      // REFRESH PARENT PRODUCTS
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Produk gagal disimpan"
+        );
+      }
+
+      alert(
+        editProduct
+          ? "Produk berhasil diperbarui!"
+          : "Produk berhasil diunggah!"
+      );
+
       if (onUploadSuccess) {
-
-        onUploadSuccess();
-
+        await onUploadSuccess();
       }
 
       onClose();
-
     } catch (error) {
+      console.error("Upload product error:", error);
 
-      console.log(error);
-
-      alert("Unggahan gagal");
-
+      alert(
+        error.message || "Produk gagal disimpan"
+      );
     } finally {
-
       setLoading(false);
-
     }
-
   };
 
   return (
-
     <div
       className="upload-overlay"
       onClick={onClose}
     >
-
       <div
         className="upload-modal"
-        onClick={(e) =>
-          e.stopPropagation()
+        onClick={(event) =>
+          event.stopPropagation()
         }
       >
-
         {/* CLOSE */}
         <button
+          type="button"
           className="close"
           onClick={onClose}
+          disabled={loading}
         >
-
           ✕
-
         </button>
 
         {/* TITLE */}
         <h2 className="upload-title">
-
-          Unggah Produk
-
+          {editProduct
+            ? "Edit Produk"
+            : "Unggah Produk"}
         </h2>
 
         {/* PRODUCT TITLE */}
         <input
           type="text"
-
           placeholder="Judul Produk"
-
           className="upload-input title-input"
-
           value={title}
-
-          onChange={(e) =>
-            setTitle(
-              e.target.value
-            )
+          onChange={(event) =>
+            setTitle(event.target.value)
           }
+          disabled={loading}
         />
 
         {/* MAIN CONTENT */}
         <div className="upload-content">
-
           {/* LEFT IMAGE SECTION */}
           <div className="upload-image-section">
-
             <label className="upload-image-box">
-
               <input
                 type="file"
+                accept="image/*"
                 multiple
                 hidden
                 onChange={handleImages}
+                disabled={loading}
               />
 
               {images.length > 0 ? (
-
                 <img
-
                   src={URL.createObjectURL(images[0])}
-
-                  alt="preview"
-
+                  alt="Pratinjau produk"
                   className="preview-image"
-
                 />
-
+              ) : editProduct?.images?.[0] ? (
+                <img
+                  src={editProduct.images[0]}
+                  alt="Gambar produk"
+                  className="preview-image"
+                />
               ) : (
-
-                <span>
-                  Unggah Gambar
-                </span>
-
+                <span>Unggah Gambar</span>
               )}
-
             </label>
 
-            {/* IMAGE COUNT */}
             {images.length > 0 && (
-
               <p className="image-count">
-
-                {images.length}
-                {" "}
-                image(s) selected
-
+                {images.length} gambar dipilih
               </p>
-
             )}
-
           </div>
 
           {/* RIGHT FORM SECTION */}
           <div className="upload-form-section">
-
             {/* DESCRIPTION */}
             <textarea
-
               placeholder="Deskripsi Produk"
-
               className="upload-description"
-
               value={description}
-
-              onChange={(e) =>
-                setDescription(
-                  e.target.value
-                )
+              onChange={(event) =>
+                setDescription(event.target.value)
               }
-
+              disabled={loading}
             />
 
             {/* CATEGORY ROW */}
             <div className="upload-row">
-
-              {/* CATEGORY */}
               <select
                 className="upload-select"
-
                 value={category}
-
-                onChange={(e) =>
-                  setCategory(
-                    e.target.value
-                  )
+                onChange={(event) =>
+                  setCategory(event.target.value)
                 }
+                disabled={loading}
               >
+                <option value="">Kategori</option>
 
-                <option value="">
-                  Kategori
-                </option>
-
-                {categories.map((c) => (
+                {categories.map((item) => (
                   <option
-                    key={c.value}
-                    value={c.value}
+                    key={item.value}
+                    value={item.value}
                   >
-                    {c.label}
+                    {item.label}
                   </option>
                 ))}
-
               </select>
 
-              {/* SUB CATEGORY */}
               <select
                 className="upload-select"
-
                 value={subCategory}
-
-                onChange={(e) =>
-                  setSubCategory(
-                    e.target.value
-                  )
+                onChange={(event) =>
+                  setSubCategory(event.target.value)
                 }
+                disabled={loading}
               >
+                <option value="">Sub Kategori</option>
 
-                <option value="">
-                  Sub Kategori
-                </option>
-
-                {subCategories.map((sub) => (
-
-                  <option key={sub}>
-                    {sub}
+                {subCategories.map((item) => (
+                  <option
+                    key={item}
+                    value={item}
+                  >
+                    {item}
                   </option>
-
                 ))}
-
               </select>
-
             </div>
 
             {/* PRICE ROW */}
             <div className="upload-row">
-
               <input
                 type="number"
-
-                placeholder="Harga awal"
-
+                min="0"
+                placeholder="Harga Awal Lelang"
                 className="upload-input"
-
-                value={currentBid}
-
-                onChange={(e) =>
-                  setCurrentBid(
-                    e.target.value
-                  )
+                value={startingBid}
+                onChange={(event) =>
+                  setStartingBid(event.target.value)
                 }
+                disabled={loading}
               />
 
               <input
                 type="number"
-
-                placeholder="Harga beli"
-
+                min="0"
+                placeholder="Harga Beli Sekarang"
                 className="upload-input"
-
                 value={buyoutPrice}
-
-                onChange={(e) =>
-                  setBuyoutPrice(
-                    e.target.value
-                  )
+                onChange={(event) =>
+                  setBuyoutPrice(event.target.value)
                 }
+                disabled={loading}
               />
-
             </div>
 
             {/* EXTRA ROW */}
             <div className="upload-row">
-
               <input
                 type="number"
                 min="1"
-
-                placeholder="Durasi Lelang (jam)"
-
+                placeholder="Durasi Setelah Tawaran Pertama (jam)"
                 className="upload-input"
-
-                value={durationHours}
-
-                onChange={(e) =>
-                  setDurationHours(
-                    e.target.value
+                value={auctionDurationHours}
+                onChange={(event) =>
+                  setAuctionDurationHours(
+                    event.target.value
                   )
                 }
+                disabled={loading}
               />
 
               <input
                 type="text"
-
                 placeholder="Merek"
-
                 className="upload-input"
-
                 value={brand}
-
-                onChange={(e) =>
-                  setBrand(
-                    e.target.value
-                  )
+                onChange={(event) =>
+                  setBrand(event.target.value)
                 }
+                disabled={loading}
               />
-
             </div>
 
+            <small className="auction-note">
+              Timer lelang akan dimulai setelah tawaran pertama masuk.
+            </small>
           </div>
-
         </div>
 
         {/* BUTTON */}
         <button
+          type="button"
           className="upload-btn"
           onClick={handleUpload}
+          disabled={loading}
         >
-
           {loading
-            ? "Mengunggah..."
-            : "Unggah Produk"}
-
+            ? editProduct
+              ? "Menyimpan..."
+              : "Mengunggah..."
+            : editProduct
+              ? "Simpan Perubahan"
+              : "Unggah Produk"}
         </button>
-
       </div>
-
     </div>
-
   );
-
 };
 
 export default UploadModal;

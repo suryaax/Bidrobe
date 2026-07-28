@@ -6,69 +6,9 @@ import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
 import Bid from "../models/Bid.js";
 import Notification from "../models/Notification.js";
+import { updateExpiredAuctions, } from "../services/auctionService.js";
 
 const router = express.Router();
-
-const updateExpiredAuctions =
-  async () => {
-    try {
-      const expiredProducts =
-        await Product.find({
-          endTime: {
-            $lt: new Date(),
-          },
-          status: "active",
-          winnerNotified: false,
-        });
-      for (
-        const product
-        of expiredProducts
-      ) {
-        // UPDATE STATUS
-        product.status =
-          "ended";
-        await product.save();
-        // ADA PEMENANG
-        if (
-          product.lastBidder
-        ) {
-          // BUYER
-          await Notification.create({
-            user:
-              product.lastBidder,
-            type:
-              "auction_won",
-            product:
-              product._id,
-            message:
-              `Anda memenangkan lelang ${product.title}`,
-          });
-
-          // SELLER
-          await Notification.create({
-            user:
-              product.seller,
-            type:
-              "auction_ended",
-            product:
-              product._id,
-            message:
-              `Lelang ${product.title} telah selesai dan memiliki pemenang`,
-          });
-        }
-
-        // IMPORTANT
-        product.winnerNotified =
-          true;
-        await product.save();
-      }
-    } catch (error) {
-      console.log(
-        "Pembaruan lelang error:",
-        error
-      );
-    }
-};
 
 router.post(
   "/upload-image",
@@ -122,16 +62,42 @@ router.post("/", protect, async (req, res) => {
       category,
       subCategory,
       brand,
-      currentBid,
+      startingBid,
       buyoutPrice,
-      durationHours,
+      auctionDurationHours,
     } = req.body;
 
-    // CREATE END TIME
-    const endTime = new Date(
-      Date.now() +
-      durationHours * 60 * 60 * 1000
-    );
+    const startingPrice = Number(startingBid);
+    const buyout = Number(buyoutPrice);
+    const duration = Number(auctionDurationHours);
+
+    if (
+      !Number.isFinite(startingPrice) ||
+      startingPrice < 0
+    ) {
+      return res.status(400).json({
+        message: "Harga awal tidak valid",
+      });
+    }
+
+    if (
+      !Number.isFinite(buyout) ||
+      buyout <= startingPrice
+    ) {
+      return res.status(400).json({
+        message:
+          "Harga Beli Sekarang harus lebih tinggi dari harga awal",
+      });
+    }
+
+    if (
+      !Number.isFinite(duration) ||
+      duration < 1
+    ) {
+      return res.status(400).json({
+        message: "Durasi lelang tidak valid",
+      });
+    }
 
     // CREATE PRODUCT
     const product = await Product.create({
@@ -141,9 +107,17 @@ router.post("/", protect, async (req, res) => {
       category,
       subCategory,
       brand,
-      currentBid,
-      buyoutPrice,
-      endTime,
+
+      startingBid: startingPrice,
+      currentBid: startingPrice,
+      buyoutPrice: buyout,
+
+      bidCount: 0,
+      auctionDurationHours: duration,
+      auctionStartedAt: null,
+      endTime: null,
+
+      status: "active",
       seller: req.user._id,
     });
     res.status(201).json({
@@ -286,6 +260,11 @@ router.get("/", async (req, res) => {
     }
     // ENDING SOON
     if (sort === "ending") {
+      // Hanya tampilkan produk yang timernya sudah berjalan
+      filter.endTime = {
+        $ne: null,
+      };
+
       sortOption = {
         endTime: 1,
       };
@@ -317,184 +296,291 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post(
-  "/:id/bid",
-  protect,
-  async (req, res) => {
-    try {
+router.post("/:id/bid", protect, async (req, res) => {
+  try {
     await updateExpiredAuctions();
-      const { amount } = req.body;
 
-      // FIND PRODUCT
-      const product =
-        await Product.findById(req.params.id);
+    // Ubah amount menjadi Number agar perbandingan tidak menggunakan string
+    const amount = Number(req.body.amount);
 
-      if (!product) {
-        return res.status(404).json({
-          message: "Produk tidak ditemukan",
-        });
-      }
+    // Cari produk
+    const product = await Product.findById(req.params.id);
 
-      if (
-        new Date() >
-        product.endTime
-      ) {
-
-        product.status =
-          "ended";
-        await product.save();
-        return res.status(400).json({
-          message:
-            "Pelelangan Berakhir",
-        });
-      }
-
-      // CHECK AUCTION STATUS
-      if (product.status !== "active") {
-        return res.status(400).json({
-          message: "Pelelangan Berakhir",
-        });
-      }
-
-      // CHECK BID VALUE
-      if (amount <= product.currentBid) {
-        return res.status(400).json({
-          message:
-            "Tawaran harus lebih tinggi dari sebelumnya",
-        });
-      }
-
-      if (
-        amount >=
-        product.buyoutPrice
-      ) {
-
-        return res.status(400).json({
-          message:
-            "Penawaran kamu melebihi harga Beli Sekarang. Gunakan tombol Beli Sekarang untuk membeli produk ini",
-        });
-      }
-
-      // CREATE BID HISTORY
-      const bid = await Bid.create({
-        product: product._id,
-        bidder: req.user._id,
-        amount,
+    if (!product) {
+      return res.status(404).json({
+        message: "Produk tidak ditemukan",
       });
+    }
 
-      await Notification.create({
-        user: product.seller,
-        type: "new_bid",
-        product: product._id,
+    // PENJUAL TIDAK BOLEH MENAWAR PRODUK SENDIRI
+    const sellerId =
+      product.seller?._id ||
+      product.seller;
+
+    if (
+      sellerId?.toString() ===
+      req.user._id.toString()
+    ) {
+      return res.status(403).json({
         message:
-          `${req.user.username} menawar produk ${product.title}`,
+          "Anda tidak dapat mengajukan tawaran pada produk milik sendiri",
       });
+    }
 
-      if (
-        product.lastBidder &&
-        product.lastBidder.toString() !==
+    // Periksa status produk terlebih dahulu
+    if (product.status !== "active") {
+      return res.status(400).json({
+        message: "Pelelangan telah berakhir",
+      });
+    }
+
+    /*
+     * Periksa waktu hanya jika timer sudah berjalan.
+     * endTime bernilai null apabila belum ada tawaran.
+     */
+    if (
+      product.endTime &&
+      new Date() >= new Date(product.endTime)
+    ) {
+      product.status = "ended";
+      await product.save();
+
+      return res.status(400).json({
+        message: "Pelelangan telah berakhir",
+      });
+    }
+
+    // Validasi nilai tawaran
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({
+        message: "Nilai tawaran tidak valid",
+      });
+    }
+
+    if (amount <= product.currentBid) {
+      return res.status(400).json({
+        message:
+          "Tawaran harus lebih tinggi dari tawaran sebelumnya",
+      });
+    }
+
+    if (amount >= product.buyoutPrice) {
+      return res.status(400).json({
+        message:
+          "Penawaran kamu telah mencapai atau melebihi harga Beli Sekarang. Gunakan tombol Beli Sekarang untuk membeli produk ini",
+      });
+    }
+
+    /*
+     * Penawaran dianggap sebagai bid pertama apabila:
+     * - bidCount masih 0
+     * - auctionStartedAt masih null
+     * - endTime masih null
+     */
+    const isFirstBid =
+      (product.bidCount || 0) === 0 &&
+      !product.auctionStartedAt &&
+      !product.endTime;
+
+    // Mulai timer hanya pada bid pertama
+    if (isFirstBid) {
+      const duration = Number(product.auctionDurationHours);
+
+      if (!Number.isFinite(duration) || duration < 1) {
+        return res.status(400).json({
+          message: "Durasi lelang pada produk tidak valid",
+        });
+      }
+
+      const startTime = new Date();
+
+      product.auctionStartedAt = startTime;
+
+      product.endTime = new Date(
+        startTime.getTime() +
+          duration * 60 * 60 * 1000
+      );
+    }
+
+    // Simpan penawar sebelumnya sebelum lastBidder diperbarui
+    const previousBidder = product.lastBidder;
+
+    // Buat riwayat penawaran
+    const bid = await Bid.create({
+      product: product._id,
+      bidder: req.user._id,
+      amount,
+    });
+
+    // Perbarui produk
+    product.currentBid = amount;
+    product.lastBidder = req.user._id;
+    product.bidCount = (product.bidCount || 0) + 1;
+
+    await product.save();
+
+    // Notifikasi untuk penjual
+    await Notification.create({
+      user: product.seller,
+      type: "new_bid",
+      product: product._id,
+      message: `${req.user.username} menawar produk ${product.title}`,
+    });
+
+    // Notifikasi untuk pengguna yang penawarannya dikalahkan
+    if (
+      previousBidder &&
+      previousBidder.toString() !==
         req.user._id.toString()
-        ) {
-        await Notification.create({
-            user: product.lastBidder,
-            type: "outbid",
-            product: product._id,
-            message:
-            `Orang lain telah mengalahkan tawaran anda: ${product.title}`,
-        });
-        }
-
-      // UPDATE PRODUCT
-      product.currentBid = amount;
-      product.lastBidder = req.user._id;
-      product.bidCount += 1;
-      await product.save();
-      res.status(201).json({
-        message: "Tawaran berhasil diajukan",
-        bid,
-        product,
-      });
-    } catch (error) {
-      res.status(500).json({
-        message: error.message,
+    ) {
+      await Notification.create({
+        user: previousBidder,
+        type: "outbid",
+        product: product._id,
+        message: `Orang lain telah mengalahkan tawaran Anda pada produk ${product.title}`,
       });
     }
+
+    return res.status(201).json({
+      message: isFirstBid
+        ? "Tawaran berhasil diajukan dan timer lelang telah dimulai"
+        : "Tawaran berhasil diajukan",
+      bid,
+      product,
+    });
+  } catch (error) {
+    console.error("Bid error:", error);
+
+    return res.status(500).json({
+      message: error.message,
+    });
   }
-);
+});
 
-router.post(
-  "/:id/buy-now",
-  protect,
-  async (req, res) => {
-    try {
-      const product =
-        await Product.findById(
-          req.params.id
-        );
+router.post("/:id/buy-now", protect, async (req, res) => {
+  try {
+    // Perbarui terlebih dahulu lelang yang waktunya sudah habis
+    await updateExpiredAuctions();
 
-      if (!product) {
-        return res.status(404).json({
-          message:
-            "Produk tidak ditemukan",
-        });
-      }
+    const product = await Product.findById(req.params.id);
 
-      if (
-        product.status !== "active"
-      ) {
-        return res.status(400).json({
-          message:
-            "Pelelangan sudah berakhir",
-        });
-      }
-
-      await Bid.create({
-        product: product._id,
-        bidder: req.user._id,
-        amount: product.buyoutPrice,
-      });
-
-      product.currentBid =
-        product.buyoutPrice;
-
-      product.lastBidder =
-        req.user._id;
-
-      product.status =
-        "sold";
-
-      await product.save();
-
-      await Notification.create({
-        user: product.seller,
-        type: "buyout",
-        product: product._id,
-        message:
-          `${req.user.username} membeli produk ${product.title} melalui Beli Sekarang`,
-      });
-
-      await Notification.create({
-        user: req.user._id,
-        type: "buyout_success",
-        product: product._id,
-        message:
-          `Anda berhasil membeli ${product.title} melalui Beli Sekarang`,
-      });
-
-      res.status(200).json({
-        message:
-          "Produk berhasil di beli",
-        product,
-      });
-
-    } catch (error) {
-      res.status(500).json({
-        message:
-          error.message,
+    if (!product) {
+      return res.status(404).json({
+        message: "Produk tidak ditemukan",
       });
     }
+
+    /*
+     * Periksa waktu lelang hanya jika timer sudah berjalan.
+     * Produk yang belum menerima bid memiliki endTime = null.
+     */
+    if (
+      product.status === "active" &&
+      product.endTime &&
+      new Date() >= new Date(product.endTime)
+    ) {
+      product.status = "ended";
+      await product.save();
+
+      return res.status(400).json({
+        message: "Pelelangan telah berakhir",
+      });
+    }
+
+    // Periksa status produk
+    if (product.status !== "active") {
+      return res.status(400).json({
+        message:
+          product.status === "sold"
+            ? "Produk sudah terjual"
+            : "Pelelangan telah berakhir",
+      });
+    }
+
+    // Penjual tidak boleh membeli produknya sendiri
+    if (
+      product.seller.toString() ===
+      req.user._id.toString()
+    ) {
+      return res.status(400).json({
+        message:
+          "Anda tidak dapat membeli produk milik sendiri",
+      });
+    }
+
+    // Simpan penawar tertinggi sebelumnya jika diperlukan
+    const previousBidder = product.lastBidder;
+
+    /*
+     * Simpan pembelian ke riwayat Bid.
+     * Nilainya menggunakan harga Beli Sekarang.
+     */
+    const purchase = await Bid.create({
+      product: product._id,
+      bidder: req.user._id,
+      amount: product.buyoutPrice,
+    });
+
+    // Perbarui informasi produk
+    product.currentBid = product.buyoutPrice;
+    product.lastBidder = req.user._id;
+    product.status = "sold";
+
+    /*
+     * auctionStartedAt dan endTime tidak perlu dibuat
+     * jika produk dibeli sebelum menerima bid.
+     *
+     * Jika timer sudah berjalan, endTime juga tidak perlu
+     * diubah karena status "sold" sudah menghentikan lelang.
+     */
+    await product.save();
+
+    // Notifikasi kepada penjual
+    await Notification.create({
+      user: product.seller,
+      type: "buyout",
+      product: product._id,
+      message: `${req.user.username} membeli produk ${product.title} melalui Beli Sekarang`,
+    });
+
+    // Notifikasi kepada pembeli
+    await Notification.create({
+      user: req.user._id,
+      type: "buyout_success",
+      product: product._id,
+      message: `Anda berhasil membeli ${product.title} melalui Beli Sekarang`,
+    });
+
+    /*
+     * Beri tahu penawar tertinggi sebelumnya bahwa produk
+     * sudah dibeli pengguna lain melalui Beli Sekarang.
+     */
+    if (
+      previousBidder &&
+      previousBidder.toString() !==
+        req.user._id.toString()
+    ) {
+      await Notification.create({
+        user: previousBidder,
+        type: "outbid",
+        product: product._id,
+        message: `Produk ${product.title} telah dibeli pengguna lain melalui Beli Sekarang`,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Produk berhasil dibeli",
+      purchase,
+      product,
+    });
+  } catch (error) {
+    console.error("Buy Now error:", error);
+
+    return res.status(500).json({
+      message: error.message,
+    });
   }
-);
+});
 
 router.get(
   "/my-bids",
