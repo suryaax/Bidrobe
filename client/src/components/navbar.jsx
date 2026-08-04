@@ -661,37 +661,19 @@ const Navbar = ({ onOpenAuth, isLoggedIn, }) => {
             <ul className="menu">
 
               <li>
-                <button className="menu-btn" onClick={() => handleProtectedRoute("/my-products") }>
-                  Produk
+                <button className="menu-btn" onClick={() => handleProtectedRoute("/my-products")}>
+                  Produk-mu
                 </button>
               </li>
 
               <li>
-                <button className="menu-btn" onClick={() => navigate("/products/Men")}>
-                  Pria
+                <button className="menu-btn" onClick={() => navigate("/")}>
+                  Beranda
                 </button>
               </li>
 
               <li>
-                <button className="menu-btn" onClick={() => navigate("/products/Women") }>
-                  Wanita
-                </button>
-              </li>
-
-              <li>
-                <button className="menu-btn" onClick={() => navigate("/products/Children") }>
-                  Anak
-                </button>
-              </li>
-
-              <li>
-                <button className="menu-btn" onClick={() => navigate("/products/Unisex") }>
-                  Unisex
-                </button>
-              </li>
-
-              <li>
-                <button className="menu-btn" onClick={() => navigate("/About")}>
+                <button className="menu-btn" onClick={() => navigate("/about")}>
                   Tentang
                 </button>
               </li>
