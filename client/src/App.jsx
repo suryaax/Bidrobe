@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 import {
   BrowserRouter,
@@ -15,7 +15,6 @@ import Home from "./pages/home";
 import ProductDetail from "./pages/productDetail";
 import Products from "./pages/products";
 import Cart from "./pages/cart";
-import Category from "./pages/category";
 import About from "./pages/about";
 import Profile from "./pages/profile";
 import Search from "./pages/Search";
@@ -76,16 +75,6 @@ function App() {
           <Route
             path="/"
             element={<Home />}
-          />
-
-          <Route
-            path="/products"
-            element={<Category />}
-          />
-
-          <Route
-            path="/products/:category"
-            element={<Category />}
           />
 
           <Route
