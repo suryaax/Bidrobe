@@ -3,8 +3,12 @@
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
   gap: 40px;
-  margin-top: 100px;
+  margin-top: 0;
   margin-bottom: 200px;
+  padding-top: max(
+    120px,
+    calc((85vw - 320px) / 8)
+  );
 }
 
 .grid {
@@ -91,6 +95,13 @@
 }
 
 @media (max-width: 1024px) {
+  .recommendation {
+    padding-top: max(
+      100px,
+      calc((85vw - 300px) / 6)
+    );
+  }
+
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -100,7 +111,11 @@
   .recommendation {
     grid-template-columns: 1fr;
     gap: 30px;
-    margin-top: 60px;
+    margin-top: 0;
+    padding-top: max(
+      80px,
+      calc((85vw - 20px) / 4)
+    );
   }
 
   .filter {
