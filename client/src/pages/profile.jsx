@@ -5,7 +5,7 @@ import React, {
 
 import "./profile.css";
 
-const Profile = () => {
+const Profile = ({ onLogout, }) => {
 
   const [username, setUsername] =
     useState("");
@@ -252,13 +252,7 @@ const Profile = () => {
 
           onClick={() => {
 
-            localStorage.removeItem(
-              "token"
-            );
-
-            localStorage.removeItem(
-              "user"
-            );
+            onLogout();
 
             window.location.href = "/";
 
