@@ -7,7 +7,7 @@ import "./AuthModal.css";
 
 import { useNavigate } from "react-router-dom";
 
-const AuthModal = ({ onClose, setIsLoggedIn, }) => {
+const AuthModal = ({ onClose, setIsLoggedIn, notice, }) => {
 
   // 🔥 LOGIN / REGISTER MODE
   const [isLogin, setIsLogin] =
@@ -291,6 +291,12 @@ const AuthModal = ({ onClose, setIsLoggedIn, }) => {
           }
 
         </p>
+
+        {notice && (
+          <p className="auth-session-notice">
+            {notice}
+          </p>
+        )}
 
         {/* FORM */}
         <div className="auth-form-wrapper">
