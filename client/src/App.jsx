@@ -150,6 +150,24 @@ function App() {
       if (sessionHasExpired) return;
 
       const now = Date.now();
+      const storedActivity = Number(
+        localStorage.getItem(
+          SESSION_ACTIVITY_KEY
+        )
+      );
+
+      // Aktivitas pertama setelah batas waktu tidak boleh
+      // menghidupkan kembali sesi yang sudah kedaluwarsa.
+      if (
+        !Number.isFinite(storedActivity) ||
+        storedActivity <= 0 ||
+        now - storedActivity >=
+          IDLE_TIMEOUT_MS
+      ) {
+        sessionHasExpired = true;
+        expireIdleSession();
+        return;
+      }
 
       // Batasi penulisan localStorage agar event mousemove
       // tidak menulis terlalu sering.
