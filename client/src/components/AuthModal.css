@@ -223,3 +223,16 @@
 
   cursor: pointer;
 }
+
+.auth-session-notice {
+  box-sizing: border-box;
+  width: 100%;
+  margin: -12px 0 20px;
+  padding: 12px 14px;
+  border: 1px solid #e1b878;
+  background: #fff8ec;
+  color: #6b4918;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
