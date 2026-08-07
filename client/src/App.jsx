@@ -6,14 +6,12 @@ import {
 
 import {
   BrowserRouter,
-  Routes,
   Route,
+  Routes,
 } from "react-router-dom";
 
-import ProtectedRoute
-from "./components/ProtectedRoute";
-
 import Navbar from "./components/navbar";
+import AuthModal from "./components/AuthModal";
 
 import Home from "./pages/home";
 import ProductDetail from "./pages/productDetail";
@@ -23,13 +21,9 @@ import About from "./pages/about";
 import Profile from "./pages/profile";
 import Search from "./pages/Search";
 
-import AuthModal from "./components/AuthModal";
-
 import "./App.css";
 
-const SESSION_ACTIVITY_KEY =
-  "lastActivityAt";
-
+const SESSION_ACTIVITY_KEY = "lastActivityAt";
 const DEFAULT_IDLE_TIMEOUT_MINUTES = 30;
 
 const configuredIdleTimeout = Number(
@@ -48,68 +42,55 @@ const IDLE_TIMEOUT_MS =
 const clearStoredSession = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
-  localStorage.removeItem(
-    SESSION_ACTIVITY_KEY
-  );
+  localStorage.removeItem(SESSION_ACTIVITY_KEY);
 };
 
 const getInitialSession = () => {
-  const token =
-    localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
   if (!token) {
-    localStorage.removeItem(
-      SESSION_ACTIVITY_KEY
-    );
+    localStorage.removeItem(SESSION_ACTIVITY_KEY);
 
     return {
-      isLoggedIn: false,
+      hasSession: false,
       expired: false,
     };
   }
 
   const lastActivity = Number(
-    localStorage.getItem(
-      SESSION_ACTIVITY_KEY
-    )
+    localStorage.getItem(SESSION_ACTIVITY_KEY)
   );
 
   const sessionExpired =
     !Number.isFinite(lastActivity) ||
     lastActivity <= 0 ||
-    Date.now() - lastActivity >=
-      IDLE_TIMEOUT_MS;
+    Date.now() - lastActivity >= IDLE_TIMEOUT_MS;
 
   if (sessionExpired) {
     clearStoredSession();
   }
 
   return {
-    isLoggedIn: !sessionExpired,
+    hasSession: !sessionExpired,
     expired: sessionExpired,
   };
 };
 
 function App() {
+  const [initialSession] = useState(getInitialSession);
 
-  const [initialSession] =
-    useState(getInitialSession);
+  const [isLoggedIn, setIsLoggedIn] =
+    useState(false);
 
-  const [showAuthModal,
-    setShowAuthModal] =
-    useState(initialSession.expired);
+  const [isSessionReady, setIsSessionReady] =
+    useState(!initialSession.hasSession);
 
-  const [authNotice,
-    setAuthNotice] =
+  const [authNotice, setAuthNotice] =
     useState(
       initialSession.expired
         ? `Sesi berakhir karena tidak ada aktivitas selama ${IDLE_TIMEOUT_MINUTES} menit. Silakan masuk kembali.`
         : ""
     );
-
-  const [isLoggedIn,
-    setIsLoggedIn] =
-    useState(initialSession.isLoggedIn);
 
   const setSessionLoginState =
     useCallback((loggedIn) => {
@@ -118,32 +99,93 @@ function App() {
           SESSION_ACTIVITY_KEY,
           Date.now().toString()
         );
+        setAuthNotice("");
       } else {
         clearStoredSession();
+        setAuthNotice(
+          "Anda telah keluar. Silakan masuk kembali untuk menggunakan Bidrobe."
+        );
       }
 
       setIsLoggedIn(loggedIn);
+      setIsSessionReady(true);
     }, []);
 
   const expireIdleSession =
     useCallback(() => {
       clearStoredSession();
       setIsLoggedIn(false);
+      setIsSessionReady(true);
       setAuthNotice(
         `Sesi berakhir karena tidak ada aktivitas selama ${IDLE_TIMEOUT_MINUTES} menit. Silakan masuk kembali.`
       );
-      setShowAuthModal(true);
     }, []);
 
-  // LOGOUT OTOMATIS SETELAH TIDAK ADA AKTIVITAS
+  // Validasi token tersimpan sebelum seluruh website dibuka.
+  useEffect(() => {
+    if (!initialSession.hasSession) return undefined;
+
+    let ignoreResult = false;
+
+    const validateStoredSession = async () => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/auth/me`,
+          {
+            headers: {
+              Authorization:
+                `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Sesi tidak valid");
+        }
+
+        const user = await response.json();
+
+        if (ignoreResult) return;
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify(user)
+        );
+        setIsLoggedIn(true);
+        setAuthNotice("");
+      } catch (error) {
+        if (ignoreResult) return;
+
+        console.error(
+          "Validasi sesi gagal:",
+          error
+        );
+        clearStoredSession();
+        setIsLoggedIn(false);
+        setAuthNotice(
+          "Sesi tidak valid atau telah berakhir. Silakan masuk kembali."
+        );
+      } finally {
+        if (!ignoreResult) {
+          setIsSessionReady(true);
+        }
+      }
+    };
+
+    validateStoredSession();
+
+    return () => {
+      ignoreResult = true;
+    };
+  }, [initialSession.hasSession]);
+
+  // Logout otomatis setelah tidak ada aktivitas.
   useEffect(() => {
     if (!isLoggedIn) return undefined;
 
     let sessionHasExpired = false;
     let lastPersistedActivity = Number(
-      localStorage.getItem(
-        SESSION_ACTIVITY_KEY
-      )
+      localStorage.getItem(SESSION_ACTIVITY_KEY)
     );
 
     const recordActivity = () => {
@@ -151,30 +193,21 @@ function App() {
 
       const now = Date.now();
       const storedActivity = Number(
-        localStorage.getItem(
-          SESSION_ACTIVITY_KEY
-        )
+        localStorage.getItem(SESSION_ACTIVITY_KEY)
       );
 
-      // Aktivitas pertama setelah batas waktu tidak boleh
-      // menghidupkan kembali sesi yang sudah kedaluwarsa.
       if (
         !Number.isFinite(storedActivity) ||
         storedActivity <= 0 ||
-        now - storedActivity >=
-          IDLE_TIMEOUT_MS
+        now - storedActivity >= IDLE_TIMEOUT_MS
       ) {
         sessionHasExpired = true;
         expireIdleSession();
         return;
       }
 
-      // Batasi penulisan localStorage agar event mousemove
-      // tidak menulis terlalu sering.
       if (
-        !Number.isFinite(
-          lastPersistedActivity
-        ) ||
+        !Number.isFinite(lastPersistedActivity) ||
         now - lastPersistedActivity >= 5000
       ) {
         lastPersistedActivity = now;
@@ -189,16 +222,13 @@ function App() {
       if (sessionHasExpired) return;
 
       const lastActivity = Number(
-        localStorage.getItem(
-          SESSION_ACTIVITY_KEY
-        )
+        localStorage.getItem(SESSION_ACTIVITY_KEY)
       );
 
       if (
         !Number.isFinite(lastActivity) ||
         lastActivity <= 0 ||
-        Date.now() - lastActivity >=
-          IDLE_TIMEOUT_MS
+        Date.now() - lastActivity >= IDLE_TIMEOUT_MS
       ) {
         sessionHasExpired = true;
         expireIdleSession();
@@ -206,10 +236,7 @@ function App() {
     };
 
     const handleVisibilityChange = () => {
-      if (
-        document.visibilityState ===
-        "visible"
-      ) {
+      if (document.visibilityState === "visible") {
         checkIdleSession();
       }
     };
@@ -235,36 +262,31 @@ function App() {
       handleVisibilityChange
     );
 
-    const idleCheckInterval =
-      window.setInterval(
-        checkIdleSession,
-        15000
-      );
+    const idleCheckInterval = window.setInterval(
+      checkIdleSession,
+      15000
+    );
 
     checkIdleSession();
 
     return () => {
-      activityEvents.forEach(
-        (eventName) => {
-          window.removeEventListener(
-            eventName,
-            recordActivity
-          );
-        }
-      );
+      activityEvents.forEach((eventName) => {
+        window.removeEventListener(
+          eventName,
+          recordActivity
+        );
+      });
 
       document.removeEventListener(
         "visibilitychange",
         handleVisibilityChange
       );
 
-      window.clearInterval(
-        idleCheckInterval
-      );
+      window.clearInterval(idleCheckInterval);
     };
   }, [isLoggedIn, expireIdleSession]);
 
-  // SINKRONISASI LOGOUT ANTARTAB
+  // Sinkronisasi logout antartab.
   useEffect(() => {
     const handleStorage = (event) => {
       if (
@@ -272,17 +294,14 @@ function App() {
         !event.newValue
       ) {
         setIsLoggedIn(false);
+        setIsSessionReady(true);
         setAuthNotice(
           "Sesi telah berakhir. Silakan masuk kembali."
         );
-        setShowAuthModal(true);
       }
     };
 
-    window.addEventListener(
-      "storage",
-      handleStorage
-    );
+    window.addEventListener("storage", handleStorage);
 
     return () =>
       window.removeEventListener(
@@ -291,136 +310,60 @@ function App() {
       );
   }, []);
 
-  const closeAuthModal = () => {
-    setShowAuthModal(false);
-    setAuthNotice("");
-  };
-
   return (
-
     <BrowserRouter>
-
-      <div className="app">
-
-        {/* NAVBAR */}
-        <Navbar
-
-          isLoggedIn={isLoggedIn}
-
-          onOpenAuth={() =>
-            setShowAuthModal(true)
-          }
-
-        />
-
-        {/* AUTH MODAL */}
-        {showAuthModal && (
-
+      <div
+        className={`app ${
+          isLoggedIn ? "" : "auth-locked"
+        }`}
+      >
+        {!isSessionReady ? (
+          <div
+            className="session-loading"
+            role="status"
+          >
+            Memeriksa sesi...
+          </div>
+        ) : !isLoggedIn ? (
           <AuthModal
-
-            onClose={closeAuthModal}
-
-            setIsLoggedIn={
-              setSessionLoginState
-            }
-
+            required
+            onClose={() => {}}
+            setIsLoggedIn={setSessionLoginState}
             notice={authNotice}
-
           />
+        ) : (
+          <>
+            <Navbar />
 
-        )}
-
-        {/* ROUTES */}
-        <Routes>
-
-          <Route
-            path="/"
-            element={<Home />}
-          />
-
-          <Route
-            path="/about"
-            element={<About />}
-          />
-
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute
-                isLoggedIn={isLoggedIn}
-                onOpenAuth={() =>
-                  setShowAuthModal(true)
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route
+                path="/profile"
+                element={
+                  <Profile
+                    onLogout={() =>
+                      setSessionLoginState(false)
+                    }
+                  />
                 }
-              >
-                <Profile
-                  onLogout={() =>
-                    setSessionLoginState(
-                      false
-                    )
-                  }
-                />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/search"
-            element={<Search />}
-          />
-
-          <Route
-            path="/my-products"
-            element={
-              <ProtectedRoute
-                isLoggedIn={isLoggedIn}
-                onOpenAuth={() =>
-                  setShowAuthModal(true)
-                }
-              >
-                <Products />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/cart"
-            element={
-              <ProtectedRoute
-                isLoggedIn={isLoggedIn}
-                onOpenAuth={() =>
-                  setShowAuthModal(true)
-                }
-              >
-                <Cart />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/product/:id"
-            element={
-
-              <ProductDetail
-
-                isLoggedIn={isLoggedIn}
-
-                onOpenAuth={() =>
-                  setShowAuthModal(true)
-                }
-
               />
-
-            }
-          />
-
-        </Routes>
-
+              <Route path="/search" element={<Search />} />
+              <Route
+                path="/my-products"
+                element={<Products />}
+              />
+              <Route path="/cart" element={<Cart />} />
+              <Route
+                path="/product/:id"
+                element={<ProductDetail />}
+              />
+            </Routes>
+          </>
+        )}
       </div>
-
     </BrowserRouter>
-
   );
-
 }
 
 export default App;

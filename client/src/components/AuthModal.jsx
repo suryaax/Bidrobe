@@ -1,4 +1,4 @@
-import React, {
+import {
   useState,
   useEffect,
 } from "react";
@@ -7,7 +7,12 @@ import "./AuthModal.css";
 
 import { useNavigate } from "react-router-dom";
 
-const AuthModal = ({ onClose, setIsLoggedIn, notice, }) => {
+const AuthModal = ({
+  onClose,
+  setIsLoggedIn,
+  notice,
+  required = false,
+}) => {
 
   // 🔥 LOGIN / REGISTER MODE
   const [isLogin, setIsLogin] =
@@ -226,8 +231,8 @@ const AuthModal = ({ onClose, setIsLoggedIn, notice, }) => {
       setIsLoggedIn(true);
 
       // CLOSE MODAL
-      onClose();
-      navigate("/profile");
+      onClose?.();
+      navigate("/");
       
 
     } catch (error) {
@@ -246,7 +251,7 @@ const AuthModal = ({ onClose, setIsLoggedIn, notice, }) => {
 
     <div
       className="auth-overlay"
-      onClick={onClose}
+      onClick={required ? undefined : onClose}
     >
 
       <div
@@ -259,16 +264,14 @@ const AuthModal = ({ onClose, setIsLoggedIn, notice, }) => {
       >
 
         {/* CLOSE */}
-        <button
-
-          className="auth-close"
-
-          onClick={onClose}
-        >
-
-          ✕
-
-        </button>
+        {!required && (
+          <button
+            className="auth-close"
+            onClick={onClose}
+          >
+            ✕
+          </button>
+        )}
 
         {/* TITLE */}
         <h2>

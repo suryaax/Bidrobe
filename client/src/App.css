@@ -2,6 +2,20 @@
   padding-top: var(--navbar-height);
 }
 
+.app.auth-locked {
+  min-height: 100vh;
+  padding-top: 0;
+}
+
+.session-loading {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  font-size: 14px;
+}
+
 .container {
   width: 85%;
   margin: 0 auto;
